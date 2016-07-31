@@ -28,6 +28,10 @@ func main() {
 	}
 
 	e := extractor.NewTabulaExtractor(config, args[0], *javaPath, *tabulaPath)
-	p := parser.NewPayslipParser()
-	p.Parse(e, args[0])
+	p, err := parser.NewPayslipParser(args[0], e)
+	if err != nil {
+		glog.Exit(err)
+	}
+
+	err = p.Parse()
 }
