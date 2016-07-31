@@ -125,6 +125,9 @@ func (p *PayslipParser) parseHead(row []string, currentIndex, ytdIndex int) (*mo
 		head = &models.PayslipHead{Name: row[0]}
 		err  error
 	)
+	if row[currentIndex] == "" && row[ytdIndex] == "" {
+		return nil, fmt.Errorf("error parsing either current or ytd")
+	}
 	if head.Current, err = util.ToAmount(row[currentIndex]); err != nil {
 		return nil, fmt.Errorf("error parsing current %s - %s", row[0], err)
 	}
