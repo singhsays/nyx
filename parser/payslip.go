@@ -191,23 +191,23 @@ func (p *PayslipParser) parseTaxes() error {
 // Parse is the main entry point for a parser that parses
 // the given file using the given extractor and returns
 // a populated Payslip model.
-func (p *PayslipParser) Parse() error {
+func (p *PayslipParser) Parse() (*models.Payslip, error) {
 	var err error
 	if err = p.parsePeriod(); err != nil {
-		return err
+		return nil, err
 	}
 	if err = p.parseSummary(); err != nil {
-		return err
+		return nil, err
 	}
 	if err = p.parseEarnings(); err != nil {
-		return err
+		return nil, err
 	}
 	if err = p.parseDeductions(); err != nil {
-		return err
+		return nil, err
 	}
 	if err = p.parseTaxes(); err != nil {
-		return err
+		return nil, err
 	}
 	fmt.Printf("%#v", p.payslip)
-	return nil
+	return p.payslip, nil
 }
