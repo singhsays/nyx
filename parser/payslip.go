@@ -26,12 +26,12 @@ type PayslipParser struct {
 
 // NewPayslipParser returns a new initialized PayslipParser instance.
 // The parser is specific to a given file, instantiate a new one for each file.
-func NewPayslipParser(filename string, e extractor.Extractor) (*PayslipParser, error) {
+func NewPayslipParser(filename string, currency string, e extractor.Extractor) (*PayslipParser, error) {
 	var err error
 	parser := &PayslipParser{
 		filename:  filename,
 		extractor: e,
-		payslip:   &models.Payslip{},
+		payslip:   &models.Payslip{Currency: currency},
 	}
 	// Get the page offset based on the reference page's height.
 	parser.offset, err = e.GetOffset(filename)
@@ -208,6 +208,5 @@ func (p *PayslipParser) Parse() (*models.Payslip, error) {
 	if err = p.parseTaxes(); err != nil {
 		return nil, err
 	}
-	fmt.Printf("%#v", p.payslip)
 	return p.payslip, nil
 }

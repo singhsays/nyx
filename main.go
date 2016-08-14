@@ -14,6 +14,7 @@ var (
 	configPath = flag.String("config_file", "./config/payslip.conf.json", "Path to the config file.")
 	javaPath   = flag.String("java_path", "/usr/bin/java", "Path to the java binary.")
 	tabulaPath = flag.String("tabula_path", "/Users/sumeets/bin/tabula-0.9.0.jar", "Path to the Tabula jar.")
+	currency   = flag.String("currency", "USD", "currency code of the documents to import.")
 	// MongoImporter
 	mongoAddress    = flag.String("mongo_address", "localhost:27017", "mongodb server address.")
 	mongoDatabase   = flag.String("mongo_db", "nyx", "mongodb database name.")
@@ -42,7 +43,7 @@ func main() {
 	defer i.Close()
 
 	for _, filename := range args {
-		p, err := parser.NewPayslipParser(filename, e)
+		p, err := parser.NewPayslipParser(filename, *currency, e)
 		if err != nil {
 			glog.Error(err)
 			continue

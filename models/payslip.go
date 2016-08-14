@@ -18,6 +18,7 @@ type PayslipHead struct {
 
 type Payslip struct {
 	DocumentID string    `json:"document_id" bson:"document_id"`
+	Currency   string    `json:"currency" bson:"currency"`
 	Date       time.Time `json:"date" bson:"date"`
 	StartDate  time.Time `json:"start_date" bson:"start_date"`
 	EndDate    time.Time `json:"end_date" bson:"end_date"`
