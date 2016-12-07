@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"fmt"
+	"math"
 	"nyx/extractor"
 	"nyx/models"
 	"nyx/util"
@@ -12,16 +13,34 @@ import (
 	"github.com/golang/glog"
 )
 
+// Threshold for floating point comparisons.
+const THRESHOLD = 0.00000001
+
+// floatsEqual checks if the given floats are (nearly) equal.
+func floatsEqual(first, second float64) bool {
+	return (math.Abs(second-first) < THRESHOLD)
+}
+
+// HeadsTotal calculates the total sum for a given list of heads.
+func HeadsTotal(heads []*models.PayslipHead) float64 {
+	sum := 0.0
+	for _, head := range heads {
+		sum += head.Current
+	}
+	return sum
+}
+
 // PayslipParser parsers a given file using an extractor, into a payslip.
 // The parser is responsible for converting csv type data to the corresponding
 // data model. The extractor does the actual file parsing and extraction of csv
 // data.
 type PayslipParser struct {
-	filename  string
-	extractor extractor.Extractor
-	offset    float64
-	payslip   *models.Payslip
-	sections  []string
+	filename     string
+	extractor    extractor.Extractor
+	heightOffset float64
+	widthOffset  float64
+	payslip      *models.Payslip
+	sections     []string
 }
 
 // NewPayslipParser returns a new initialized PayslipParser instance.
@@ -34,9 +53,9 @@ func NewPayslipParser(filename string, currency string, e extractor.Extractor) (
 		payslip:   &models.Payslip{Currency: currency},
 	}
 	// Get the page offset based on the reference page's height.
-	parser.offset, err = e.GetOffset(filename)
+	parser.heightOffset, parser.widthOffset, err = e.GetOffset(filename)
 	if err != nil {
-		return nil, fmt.Errorf("error getting page offset - %s", err.Error())
+		return nil, fmt.Errorf("error getting page offsets - %s", err.Error())
 	}
 	return parser, nil
 }
@@ -44,7 +63,7 @@ func NewPayslipParser(filename string, currency string, e extractor.Extractor) (
 // extractSection extracts a named section from the given filename.
 // It also parses the named section to csv rows.
 func (p *PayslipParser) extractSection(name string) ([][]string, error) {
-	output, err := p.extractor.ExtractSection(name, p.filename, p.offset)
+	output, err := p.extractor.ExtractSection(name, p.filename, p.heightOffset, p.widthOffset)
 	if err != nil {
 		return nil, fmt.Errorf("error extracting %s section - %s", name, err.Error())
 	}
@@ -59,6 +78,7 @@ func (p *PayslipParser) parseSection(name string, data []byte) ([][]string, erro
 	if err != nil {
 		return nil, fmt.Errorf("error parsing %s section - %s", name, err.Error())
 	}
+	glog.Infof("parsed section %#v", records)
 	return records, nil
 }
 
@@ -121,6 +141,7 @@ func (p *PayslipParser) parseSummary() error {
 // parseHead parses the current and ytd values for a given payslip head
 // from the given csv data row.
 func (p *PayslipParser) parseHead(row []string, currentIndex, ytdIndex int) (*models.PayslipHead, error) {
+	glog.Info(row)
 	var (
 		head = &models.PayslipHead{Name: row[0]}
 		err  error
@@ -144,7 +165,7 @@ func (p *PayslipParser) parseEarnings() error {
 		return err
 	}
 	for _, row := range sectionRows[1 : len(sectionRows)-1] {
-		head, err := p.parseHead(row, 3, 4)
+		head, err := p.parseHead(row, len(row)-2, len(row)-1)
 		if err != nil {
 			glog.Error(err)
 			continue
@@ -161,7 +182,7 @@ func (p *PayslipParser) parseDeductions() error {
 		return err
 	}
 	for _, row := range sectionRows[1:] {
-		head, err := p.parseHead(row, 1, 2)
+		head, err := p.parseHead(row, len(row)-2, len(row)-1)
 		if err != nil {
 			glog.Error(err)
 			continue
@@ -178,13 +199,42 @@ func (p *PayslipParser) parseTaxes() error {
 		return err
 	}
 	for _, row := range sectionRows[1:] {
-		head, err := p.parseHead(row, 1, 2)
+		head, err := p.parseHead(row, 2, 3)
 		if err != nil {
 			glog.Error(err)
 			continue
 		}
 		p.payslip.TaxHeads = append(p.payslip.TaxHeads, head)
 	}
+	return nil
+}
+
+// validate runs a simple sum check validation on parsed data.
+func (p *PayslipParser) validate() error {
+	// Verify gross matches the sum of income heads.
+	totalIncome := HeadsTotal(p.payslip.IncomeHeads)
+	if !floatsEqual(totalIncome, p.payslip.Gross) {
+		return fmt.Errorf("error %s - gross income %f != sum of income heads %f", p.payslip.DocumentID, p.payslip.Gross, totalIncome)
+	}
+	// Verify total deduction matches the sum of deduction heads.
+	totalDeductions := HeadsTotal(p.payslip.DeductionHeads)
+	if !floatsEqual(totalDeductions, p.payslip.Deductions) {
+		return fmt.Errorf("error %s - total deduction %f != sum of deduction heads %f", p.payslip.DocumentID, p.payslip.Deductions, totalDeductions)
+	}
+	// Verify total taxes matches the sum of tax heads.
+	totalTaxes := HeadsTotal(p.payslip.TaxHeads)
+	if !floatsEqual(totalTaxes, p.payslip.Taxes) {
+		return fmt.Errorf("error %s - total taxes %f != sum of tax heads %f", p.payslip.DocumentID, p.payslip.Taxes, totalTaxes)
+	}
+	// Verify net pay is equal to gross - taxes - deductions.
+	if !floatsEqual(totalIncome-totalDeductions-totalTaxes, p.payslip.NetPay) {
+		return fmt.Errorf("error %s- net income %f != %f (gross) - %f (deductions) - %f (taxes)", p.payslip.DocumentID, p.payslip.NetPay, totalIncome, totalDeductions, totalTaxes)
+	}
+	glog.Info("validated successfully.")
+	glog.Infof("gross: %f", totalIncome)
+	glog.Infof("deductions: %f", totalDeductions)
+	glog.Infof("taxes: %f", totalTaxes)
+	glog.Infof("net: %f", totalIncome-totalDeductions-totalTaxes)
 	return nil
 }
 
@@ -206,6 +256,9 @@ func (p *PayslipParser) Parse() (*models.Payslip, error) {
 		return nil, err
 	}
 	if err = p.parseTaxes(); err != nil {
+		return nil, err
+	}
+	if err := p.validate(); err != nil {
 		return nil, err
 	}
 	return p.payslip, nil

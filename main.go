@@ -13,7 +13,7 @@ import (
 var (
 	configPath = flag.String("config_file", "./config/payslip.conf.json", "Path to the config file.")
 	javaPath   = flag.String("java_path", "/usr/bin/java", "Path to the java binary.")
-	tabulaPath = flag.String("tabula_path", "/Users/sumeets/bin/tabula-0.9.0.jar", "Path to the Tabula jar.")
+	tabulaPath = flag.String("tabula_path", "/Users/sumeets/bin/tabula-0.9.1.jar", "Path to the Tabula jar.")
 	currency   = flag.String("currency", "USD", "currency code of the documents to import.")
 	// MongoImporter
 	mongoAddress    = flag.String("mongo_address", "localhost:27017", "mongodb server address.")

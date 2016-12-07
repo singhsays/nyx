@@ -25,6 +25,7 @@ type SectionConfig struct {
 
 type ExtractorConfig struct {
 	BasePageHeight float64         `json:"base_page_height"`
+	BasePageWidth  float64         `json:"base_page_width"`
 	Sections       []SectionConfig `json:"sections"`
 	SectionsByName map[string]SectionConfig
 }
@@ -49,6 +50,6 @@ func NewExtractorConfig(filename string) (*ExtractorConfig, error) {
 }
 
 type Extractor interface {
-	ExtractSection(string, string, float64) ([]byte, error)
-	GetOffset(string) (float64, error)
+	ExtractSection(string, string, float64, float64) ([]byte, error)
+	GetOffset(string) (float64, float64, error)
 }
