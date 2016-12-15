@@ -1,0 +1,31 @@
+{
+  "name": "nyx",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "cryptex": "^1.0.0",
+    "electron": "^1.4.12",
+    "moment": "^2.17.1",
+    "nightmare": "^2.8.1",
+    "nightmare-download-manager": "^0.2.2",
+    "path": "^0.12.7",
+    "untildify": "^3.0.2",
+    "winston": "^2.3.0",
+    "yargs": "^6.5.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/singhsays/nyx.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/singhsays/nyx/issues"
+  },
+  "homepage": "https://github.com/singhsays/nyx#readme"
+}
