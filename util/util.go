@@ -1,6 +1,7 @@
 package util
 
 import (
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -9,6 +10,9 @@ import (
 var (
 	amountPattern = regexp.MustCompile("[()$,]")
 )
+
+// Threshold for floating point comparisons.
+const THRESHOLD = 0.00000001
 
 // ToAmount parses a currency string into a float.
 // It
@@ -25,4 +29,9 @@ func ToAmount(value string) (float64, error) {
 		return 0, err
 	}
 	return multiplier * amount, nil
+}
+
+// FloatsEqual checks if the given floats are (nearly) equal.
+func FloatsEqual(first, second float64) bool {
+	return (math.Abs(second-first) < THRESHOLD)
 }

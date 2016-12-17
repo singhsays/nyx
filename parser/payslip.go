@@ -13,14 +13,6 @@ import (
 	"github.com/golang/glog"
 )
 
-// Threshold for floating point comparisons.
-const THRESHOLD = 0.00000001
-
-// floatsEqual checks if the given floats are (nearly) equal.
-func floatsEqual(first, second float64) bool {
-	return (math.Abs(second-first) < THRESHOLD)
-}
-
 // HeadsTotal calculates the total sum for a given list of heads.
 func HeadsTotal(heads []*models.PayslipHead) float64 {
 	sum := 0.0
@@ -213,21 +205,21 @@ func (p *PayslipParser) parseTaxes() error {
 func (p *PayslipParser) validate() error {
 	// Verify gross matches the sum of income heads.
 	totalIncome := HeadsTotal(p.payslip.IncomeHeads)
-	if !floatsEqual(totalIncome, p.payslip.Gross) {
+	if !util.FloatsEqual(totalIncome, p.payslip.Gross) {
 		return fmt.Errorf("error %s - gross income %f != sum of income heads %f", p.payslip.DocumentID, p.payslip.Gross, totalIncome)
 	}
 	// Verify total deduction matches the sum of deduction heads.
 	totalDeductions := HeadsTotal(p.payslip.DeductionHeads)
-	if !floatsEqual(totalDeductions, p.payslip.Deductions) {
+	if !util.FloatsEqual(totalDeductions, p.payslip.Deductions) {
 		return fmt.Errorf("error %s - total deduction %f != sum of deduction heads %f", p.payslip.DocumentID, p.payslip.Deductions, totalDeductions)
 	}
 	// Verify total taxes matches the sum of tax heads.
 	totalTaxes := HeadsTotal(p.payslip.TaxHeads)
-	if !floatsEqual(totalTaxes, p.payslip.Taxes) {
+	if !util.FloatsEqual(totalTaxes, p.payslip.Taxes) {
 		return fmt.Errorf("error %s - total taxes %f != sum of tax heads %f", p.payslip.DocumentID, p.payslip.Taxes, totalTaxes)
 	}
 	// Verify net pay is equal to gross - taxes - deductions.
-	if !floatsEqual(totalIncome-totalDeductions-totalTaxes, p.payslip.NetPay) {
+	if !util.FloatsEqual(totalIncome-totalDeductions-totalTaxes, p.payslip.NetPay) {
 		return fmt.Errorf("error %s- net income %f != %f (gross) - %f (deductions) - %f (taxes)", p.payslip.DocumentID, p.payslip.NetPay, totalIncome, totalDeductions, totalTaxes)
 	}
 	glog.Info("validated successfully.")
