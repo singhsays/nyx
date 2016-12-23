@@ -45,7 +45,7 @@ nightmare.on('download', function(state, downloadItem) {
   if (state == 'started') {
     var match = downloadItem.url.match(/gennumber=(.*)!pagererid/);
     if (match.length >= 2) {
-      filename = path.join(argv.path, match[1]+'.pdf');
+      filename = path.join(argv.path, match[1]+'-'+argv.zoom+'.pdf');
       nightmare.emit('download', filename, downloadItem);
     }
   }
@@ -157,6 +157,7 @@ var startSession = function(username, password, args, conf) {
     .wait(2000)
     .evaluate(parseDownloads, args.query, args.zoom, conf)
     .then(function(files) {
+      winston.info('parsed', files.length, 'files - ', files);
       return files.reduce(function(sequence, next) {
         winston.info('queued download - ', next);
         return sequence.then(function() {
