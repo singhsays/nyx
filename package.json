@@ -5,7 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "cryptex": "^1.0.0",
-    "electron": "^1.4.12",
+    "electron": "^9.1.0",
     "moment": "^2.17.1",
     "nightmare": "^2.8.1",
     "nightmare-download-manager": "^0.2.2",
